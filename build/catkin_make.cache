@@ -1,0 +1,2 @@
+lab1:lab2:lab3:project:robotteknik/my_simple_controllers:robotteknik/robot_models/franka_description:robotteknik/robot_models/three_dof_planar
+-DCATKIN_DEVEL_PREFIX=/home/erik/Documents/Robotics/devel -DCMAKE_INSTALL_PREFIX=/home/erik/Documents/Robotics/install -G Unix Makefiles

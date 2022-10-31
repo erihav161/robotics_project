@@ -3,7 +3,7 @@
 #define FLOAT_MAX 1.7
 #include <random>
 #include <iomanip>
-#define LAMBDA pow(10, -6)
+#define LAMBDA pow(10, -5)
 
 using namespace std;
 using namespace Eigen;
@@ -56,15 +56,13 @@ void KDLSubscriber::callBack(const sensor_msgs::JointState &jointState) {
 void KDLSubscriber::solveIK() {
     int nrJoints = this->my_tree.getNrOfJoints();
     KDL::JntArray qGoal(nrJoints);
-    VectorXd qCurrent(nrJoints,1), deltaVelocity(6,1), u0(nrJoints, 1), qg(nrJoints, 1);
-    
-    MatrixXd J(6, nrJoints), pseudoInverseJ(6,nrJoints), JJT(6,6), I(7,7);
-    double Kp, K0;
+    VectorXd qCurrent(nrJoints,1), deltaVelocity(6,1);
+    MatrixXd pseudoInverseJ(6,nrJoints), JJT(6,6);
 
+    
     for (int i = 0; i < nrJoints; i++) {
         if (nrJoints > 3) {
-            qGoal(i) = this->qc(i);
-            qg(i) = this->qc(i);
+            qGoal(i) = this->jntsPanda.at(i);
         }
         else {
             qGoal(i) = this->jnts3dof.at(i);
@@ -73,32 +71,23 @@ void KDLSubscriber::solveIK() {
    
     
     deltaVelocity = this->getVelocity(this->qc, qGoal);
-    I.setIdentity();
+    
+    while (deltaVelocity.norm() > 0.001) {
 
-    Kp = 1;
-    K0 = 1;
-    u0 = K0 * qg;
+        cout << deltaVelocity.block<3,1>(0,0).norm() << endl;
 
-    while (deltaVelocity.norm() > 0.1 && this->node.ok()) {
+        pseudoInverseJ = this->calcualteJacobian(this->qc);
 
-        // cout << deltaVelocity.block<3,1>(0,0).norm() << endl;
-        cout << deltaVelocity << endl << endl;
-        J = this->calcualteJacobian(this->qc);
+        JJT = pseudoInverseJ * pseudoInverseJ.transpose();
+        JJT.diagonal().array() += 0.01;
+        pseudoInverseJ = pseudoInverseJ.transpose()*(JJT.inverse());
 
-        JJT = J * J.transpose();
-        // JJT.diagonal().array() += 0.01;
-        pseudoInverseJ = J.transpose()*(JJT.inverse());
-
-
-        // deltaVelocity *= pow(10, 1);
+        deltaVelocity *= pow(10, 1);
         for (int i = 0; i < nrJoints; i++) {
             qCurrent(i) = this->qc(i);
         }
 
-
-        cout << "first part" << endl << qCurrent << endl << endl;
-        cout << "second part" << endl << u0     << endl << endl;
-        qCurrent = qCurrent + Kp * LAMBDA * pseudoInverseJ * deltaVelocity + (I - pseudoInverseJ * J)*u0;
+        qCurrent = qCurrent + LAMBDA * pseudoInverseJ * deltaVelocity;
 
         for (int i = 0; i < nrJoints; i++) {
             this->qc(i) = qCurrent(i);
@@ -201,7 +190,7 @@ KDLSubscriber::KDLSubscriber() {
     this->qc = KDL::JntArray(this->my_tree.getNrOfJoints());
     this->randomPose();
     this->jnts3dof = {0, 0, 0};
-    this->jntsPanda = {-1.4, -2.4, -0.36, -2.21, 1.08, 2.8, 3.2};
+    this->jntsPanda = {0, 0, 0, -1, 0, 0, 0};
 }
 
 KDLSubscriber::~KDLSubscriber() {

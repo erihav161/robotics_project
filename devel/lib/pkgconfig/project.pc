@@ -1,0 +1,8 @@
+prefix=/home/erik/Documents/Robotics/devel
+
+Name: project
+Description: Description of project
+Version: 0.0.0
+Cflags: -I/home/erik/Documents/Robotics/src/project/include
+Libs: -L${prefix}/lib -lproject
+Requires: 

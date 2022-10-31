@@ -1,6 +1,6 @@
 #ifndef KDLSubscriber_hpp
 #define KDLSubscriber_hpp
-#define ROBOT_DESC "panda_link8"//"panda_link8" //"three_dof_planar_eef"
+#define ROBOT_DESC "three_dof_planar_eef"//"panda_link8" //"three_dof_planar_eef"
 
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>

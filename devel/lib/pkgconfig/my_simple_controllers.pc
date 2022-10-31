@@ -1,0 +1,8 @@
+prefix=/home/erik/Documents/Robotics/devel
+
+Name: my_simple_controllers
+Description: Description of my_simple_controllers
+Version: 0.0.0
+Cflags: -I/home/erik/Documents/Robotics/src/robotteknik/my_simple_controllers/include
+Libs: -L${prefix}/lib -lmy_simple_controllers
+Requires: controller_interface kdl_parser roscpp lab2 visualization_msgs
