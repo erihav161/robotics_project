@@ -56,16 +56,17 @@ void KDLSubscriber::callBack(const sensor_msgs::JointState &jointState) {
 void KDLSubscriber::solveIK() {
     int nrJoints = this->my_tree.getNrOfJoints();
     KDL::JntArray qGoal(nrJoints);
-    VectorXd qCurrent(nrJoints,1), deltaVelocity(6,1);
-    MatrixXd pseudoInverseJ(6,nrJoints), JJT(6,6);
+    VectorXd qCurrent(nrJoints,1), deltaVelocity(6,1), u0(nrJoints, 1);
+    MatrixXd pseudoInverseJ(6,nrJoints), JJT(6,6), I(nrJoints, nrJoints), J(6,nrJoints);
 
-
+    I.setIdentity();
 
 
     
     for (int i = 0; i < nrJoints; i++) {
         if (nrJoints > 3) {
             qGoal(i) = this->jntsPanda.at(i);
+            u0(i) = qGoal(i);
         }
         else {
             qGoal(i) = this->jnts3dof.at(i);
@@ -80,18 +81,19 @@ void KDLSubscriber::solveIK() {
         // cout << deltaVelocity.block<3,1>(0,0).norm() << endl;
         cout << deltaVelocity << endl << endl;
 
-        pseudoInverseJ = this->calcualteJacobian(this->qc);
+        J = this->calcualteJacobian(this->qc);
 
-        JJT = pseudoInverseJ * pseudoInverseJ.transpose();
+        JJT = J * J.transpose();
         JJT.diagonal().array() += 0.01;
-        pseudoInverseJ = pseudoInverseJ.transpose()*(JJT.inverse());
+        pseudoInverseJ = J.transpose()*(JJT.inverse());
 
         deltaVelocity *= pow(10, 1);
         for (int i = 0; i < nrJoints; i++) {
             qCurrent(i) = this->qc(i);
         }
 
-        qCurrent = qCurrent + LAMBDA * pseudoInverseJ * deltaVelocity;
+        
+        qCurrent = qCurrent + LAMBDA * pseudoInverseJ * deltaVelocity + (I - pseudoInverseJ*J)*u0;
 
         for (int i = 0; i < nrJoints; i++) {
             this->qc(i) = qCurrent(i);
